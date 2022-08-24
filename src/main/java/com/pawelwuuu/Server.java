@@ -61,10 +61,8 @@ public class Server {
                 }
             }
 
-
             outputStreams.putIfAbsent(clientSocket, outputSocket);
             inputStreams.putIfAbsent(clientSocket, inputSocket);
-
         } catch (IOException e){
             e.printStackTrace();
         }
@@ -84,6 +82,9 @@ public class Server {
                 try{
                     if (inputStream.available() > 0){
                         String message = receiveSocketMessage(inputStream);     //receiving message
+                        if (message.matches(".+<!@PASSWORD@!>.+")){
+                            continue;                                           //checking if message doesn't contain password
+                        }
                         broadcastMessage(message, clientSocket);    //broadcasting message
                     }
                 } catch (IOException e){

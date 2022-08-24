@@ -40,7 +40,7 @@ public class Client {
             this.output = new DataOutputStream(socket.getOutputStream());
             this.input = new DataInputStream(socket.getInputStream());
 
-            sendMessage(new Message(password, nick)); //sends message with password
+            sendMessage(new Message(password, "<!@PASSWORD@!>")); //sends message with password
 
 
         } catch (IOException e){
