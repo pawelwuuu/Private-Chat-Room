@@ -14,7 +14,7 @@ public class Validator {
     public static boolean isPasswordCorrect(String password){
         String passwordRegex = "\\w+";
 
-        if(password.matches(passwordRegex) && password.length() > 5 && password.length() < 17) {
+        if(password.matches(passwordRegex) && password.length() >= 5 && password.length() < 17) {
             return true;
         }
 

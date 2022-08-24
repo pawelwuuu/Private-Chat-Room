@@ -1,4 +1,4 @@
-package com.pawelwuuu;
+package com.pawelwuuu.Exceptions;
 
 public class InvalidIpException extends RuntimeException{
     public InvalidIpException() {

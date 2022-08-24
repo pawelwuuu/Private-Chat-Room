@@ -1,10 +1,14 @@
 package com.pawelwuuu;
 
+import com.pawelwuuu.Exceptions.InvalidIpException;
+import com.pawelwuuu.Exceptions.InvalidNicknameException;
+import com.pawelwuuu.Exceptions.InvalidPasswordException;
+
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
-import java.net.UnknownHostException;
+import java.sql.SQLOutput;
 import java.util.Scanner;
 import static com.pawelwuuu.jsonUtil.JsonManager.*;
 
@@ -36,8 +40,11 @@ public class Client {
             this.output = new DataOutputStream(socket.getOutputStream());
             this.input = new DataInputStream(socket.getInputStream());
 
+            sendMessage(new Message(password, nick)); //sends message with password
+
+
         } catch (IOException e){
-            System.out.println("Connection with server failed.");
+            System.out.println("Connection with server failed: " + e.getMessage());
             isOn = false;
         } catch (IllegalArgumentException e){
             System.out.println("Port value is wrong, probably out of range.");
@@ -45,13 +52,13 @@ public class Client {
         }
     }
 
-    public Client(String nick, String ServerIp) {
-        this(nick, null ,ServerIp);
-    }
-
-    public Client(String nick){
-        this(nick, null, "127.0.0.1");
-    }
+//    public Client(String nick, String ServerIp) {
+//        this(nick, null ,ServerIp);
+//    }
+//
+//    public Client(String nick){
+//        this(nick, null, "127.0.0.1");
+//    }
 
     public void userInterface(){
         Thread receivingThread = new Thread(() -> userReceivingMessageInterface());
@@ -77,6 +84,13 @@ public class Client {
                 sendMessage(message);
             } catch (IOException e){
                 System.out.println("Error, connection withe server may be failed.");
+                System.out.println("Reason: " + e.getMessage());
+                System.out.println("Client turning off.");
+                isOn = false;
+            } catch (Throwable e){
+                System.out.println("Error: " + e.getMessage());
+                System.out.println("Client turning off.");
+                isOn = false;
             }
         }
     }
@@ -91,6 +105,12 @@ public class Client {
                 }
             } catch (IOException e){
                 System.out.println("Connection with server failed.");
+                System.out.println("Reason: " + e.getMessage());
+                System.out.println("Client turning off.");
+                isOn = false;
+            } catch (Throwable e){
+                System.out.println("Error: " + e.getMessage());
+                System.out.println("Client turning off.");
                 isOn = false;
             }
         }

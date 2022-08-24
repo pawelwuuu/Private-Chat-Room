@@ -17,38 +17,38 @@ class ServerTest {
     Socket socket2;
 
 
-    @BeforeEach
-    void initServerClient(){
-        try{
-            server = new Server(InetAddress.getByName("127.0.0.1"));
-        } catch (Throwable e){
-            e.printStackTrace();
-        }
+//    @BeforeEach
+//    void initServerClient(){
+//        try{
+//            server = new Server(InetAddress.getByName("127.0.0.1"));
+//        } catch (Throwable e){
+//            e.printStackTrace();
+//        }
+//
+//        Thread connectionEstablisher = new Thread(() -> server.establishConnections());
+//        connectionEstablisher.start();
+//
+//        client1 = new Client("Adam");
+//        client2 = new Client("Jakub");
+//        connectionEstablisher.interrupt();
+//    }
 
-        Thread connectionEstablisher = new Thread(() -> server.establishConnections());
-        connectionEstablisher.start();
-
-        client1 = new Client("Adam");
-        client2 = new Client("Jakub");
-        connectionEstablisher.interrupt();
-    }
-
-    @Test
-    void receiveMessageTest() {
-        client1.sendMessage(client1.createMessage("Hi!"));
-        client2.sendMessage(client2.createMessage("Hello!"));
-
-        try{
-            String message1 = server.receiveSocketMessage(new DataInputStream(socket1.getInputStream()));
-            String message2 = server.receiveSocketMessage(new DataInputStream(socket2.getInputStream()));
-
-            assertEquals(message1, "{\"content\":\"Hi!\",\"sender\":\"Adam\"}");
-            assertEquals(message2, "{\"content\":\"Hello!\",\"sender\":\"Jakub\"}");
-        } catch (Throwable e){
-            e.printStackTrace();
-        }
-
-    }
+//    @Test
+//    void receiveMessageTest() {
+//        client1.sendMessage(client1.createMessage("Hi!"));
+//        client2.sendMessage(client2.createMessage("Hello!"));
+//
+//        try{
+//            String message1 = server.receiveSocketMessage(new DataInputStream(socket1.getInputStream()));
+//            String message2 = server.receiveSocketMessage(new DataInputStream(socket2.getInputStream()));
+//
+//            assertEquals(message1, "{\"content\":\"Hi!\",\"sender\":\"Adam\"}");
+//            assertEquals(message2, "{\"content\":\"Hello!\",\"sender\":\"Jakub\"}");
+//        } catch (Throwable e){
+//            e.printStackTrace();
+//        }
+//
+//    }
 
 
 }

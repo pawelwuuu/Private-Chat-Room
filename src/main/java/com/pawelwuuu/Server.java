@@ -1,5 +1,7 @@
 package com.pawelwuuu;
 
+import static com.pawelwuuu.jsonUtil.JsonManager.*;
+
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -41,21 +43,40 @@ public class Server {
      void establishConnection(){
         try{
             Socket clientSocket = server.accept();
-            DataOutputStream clientOutput = new DataOutputStream(clientSocket.getOutputStream());
-            DataInputStream clientInput = new DataInputStream(clientSocket.getInputStream());
+            DataOutputStream outputSocket = new DataOutputStream(clientSocket.getOutputStream());
+            DataInputStream inputSocket = new DataInputStream(clientSocket.getInputStream());
+
+            //TODO add encrypted password checking
+            if (password != null) {
+                String parsedPasswordMessage = receiveSocketMessage(inputSocket);
+                Message passwordMessage = objectDeserialization(parsedPasswordMessage, Message.class);
+                String receivedPassword = passwordMessage.getContent();
+
+                if (receivedPassword == null || ! receivedPassword.equals(password)) {
+                    sendMessage(
+                            new Message("Password is wrong, connection denied.", "Server"),
+                            outputSocket);
+                    clientSocket.close();
+                    return;
+                }
+            }
 
 
-            outputStreams.putIfAbsent(clientSocket, clientOutput);
-            inputStreams.putIfAbsent(clientSocket, clientInput);
+            outputStreams.putIfAbsent(clientSocket, outputSocket);
+            inputStreams.putIfAbsent(clientSocket, inputSocket);
 
         } catch (IOException e){
-            // pass
+            e.printStackTrace();
         }
 
     }
 
     void manageIncomingMessages(){
         while (true){
+            if (inputStreams.size() == 0){
+                continue;
+            }
+
             for (var entry: inputStreams.entrySet()) {
                 Socket clientSocket = entry.getKey();
                 DataInputStream inputStream = entry.getValue();
@@ -103,6 +124,15 @@ public class Server {
     public void establishConnections(){
         while (true){
             establishConnection();
+        }
+    }
+
+    public void sendMessage(Message message, DataOutputStream outputStream) throws IOException {
+        try {
+            String parsedMessage = objectSerialization(message);
+            outputStream.writeUTF(parsedMessage);
+        } catch (IOException e){
+            throw e;
         }
     }
 

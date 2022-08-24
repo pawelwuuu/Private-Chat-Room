@@ -1,4 +1,4 @@
-package com.pawelwuuu;
+package com.pawelwuuu.Exceptions;
 
 public class InvalidNicknameException extends RuntimeException{
     public InvalidNicknameException() {
