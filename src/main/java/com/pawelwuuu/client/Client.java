@@ -3,6 +3,7 @@ package com.pawelwuuu.client;
 import com.pawelwuuu.Exceptions.InvalidIpException;
 import com.pawelwuuu.Exceptions.InvalidNicknameException;
 import com.pawelwuuu.Exceptions.InvalidPasswordException;
+import com.pawelwuuu.Exceptions.ValidatorException;
 import com.pawelwuuu.Message;
 import com.pawelwuuu.Validator;
 
@@ -51,6 +52,8 @@ public class Client {
         } catch (IllegalArgumentException e){
             System.out.println("Port value is wrong, probably out of range.");
             isOn = false;
+        } catch (ValidatorException e){
+            System.out.println(e.getMessage());
         }
     }
 
@@ -79,11 +82,11 @@ public class Client {
             } catch (IOException e){
                 System.out.println("Error, connection withe server may be failed.");
                 System.out.println("Reason: " + e.getMessage());
-                System.out.println("Client turning off.");
+                System.out.println("Client is turning off.");
                 isOn = false;
             } catch (Throwable e){
                 System.out.println("Error: " + e.getMessage());
-                System.out.println("Client turning off.");
+                System.out.println("Client is turning off.");
                 isOn = false;
             }
         }

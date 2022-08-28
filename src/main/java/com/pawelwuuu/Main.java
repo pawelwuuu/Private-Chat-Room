@@ -30,8 +30,8 @@ public class Main {
     public void run() {
         if (isServer){
             try{
-                String ip = "127.0.0.1";
-                Server server = new Server(InetAddress.getByName(ip), password);
+                InetAddress ip = InetAddress.getLocalHost();
+                Server server = new Server(ip, password);
                 server.init();
             } catch (UnknownHostException e){
                 System.out.println("Something is wrong with IP address or host port.");

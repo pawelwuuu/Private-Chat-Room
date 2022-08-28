@@ -16,30 +16,26 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class Server {
     private ServerSocket server;
-    private final long serverTimestamp;
+    private final long serverTimestamp; //todo add feature
     private final int PORT = 43839;
     private ConcurrentHashMap<Socket, DataOutputStream> outputStreams = new ConcurrentHashMap<>();
     private ConcurrentHashMap<Socket, DataInputStream> inputStreams = new ConcurrentHashMap<>();
     private final String password;
 
-    public Server(InetAddress externalIp, String password) {
+    public Server(InetAddress serverIp, String password) {
         try{
-            this.server = new ServerSocket(PORT, 100, externalIp);
+            this.server = new ServerSocket(PORT, 100, serverIp);
 
         } catch (IOException e){
-            System.out.println("com.pawelwuuu.server.Server creation failed because of IO problem.");
+            System.out.println("Server creation failed because of IO problem.");
         } catch (IllegalArgumentException e){
             System.out.println("Application port is out of range.");
         } catch (Throwable e){
-            System.out.println("com.pawelwuuu.server.Server construction failed, something gone wrong.");
+            System.out.println("Server construction failed, something gone wrong.");
         }
 
         this.serverTimestamp = Instant.EPOCH.getEpochSecond();
         this.password = password;
-    }
-
-    public Server(InetAddress externalIp){
-        this(externalIp, null);
     }
 
      void establishConnection(){
@@ -49,12 +45,12 @@ public class Server {
             DataInputStream inputSocket = new DataInputStream(clientSocket.getInputStream());
 
             //TODO add encrypted password checking
-            if (password != null) {
+            if (! password.equals("DEFAULT")) {
                 String parsedPasswordMessage = receiveSocketMessage(inputSocket);
                 Message passwordMessage = objectDeserialization(parsedPasswordMessage, Message.class);
                 String receivedPassword = passwordMessage.getContent();
 
-                if (receivedPassword == null || ! receivedPassword.equals(password)) {
+                if (! receivedPassword.equals(password)) {
                     sendMessage(
                             new Message("Password is wrong, connection denied.", "Server"),
                             outputSocket);
@@ -84,8 +80,8 @@ public class Server {
                 try{
                     if (inputStream.available() > 0){
                         String message = receiveSocketMessage(inputStream);     //receiving message
-                        if (message.matches(".+<!@PASSWORD@!>.+")){
-                            continue;                                           //checking if message doesn't contain password
+                        if (objectDeserialization(message, Message.class).isContainingServerInformation()){
+                            continue;                                           //checking if message doesn't contain information for server
                         }
                         broadcastMessage(message, clientSocket);    //broadcasting message
                     }
