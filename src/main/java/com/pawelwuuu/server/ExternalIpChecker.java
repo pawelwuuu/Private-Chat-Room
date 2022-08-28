@@ -1,4 +1,4 @@
-package com.pawelwuuu;
+package com.pawelwuuu.server;
 
 import java.io.BufferedReader;
 import java.io.IOException;

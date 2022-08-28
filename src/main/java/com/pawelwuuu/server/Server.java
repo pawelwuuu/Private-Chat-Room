@@ -1,4 +1,6 @@
-package com.pawelwuuu;
+package com.pawelwuuu.server;
+
+import com.pawelwuuu.Message;
 
 import static com.pawelwuuu.jsonUtil.JsonManager.*;
 
@@ -25,11 +27,11 @@ public class Server {
             this.server = new ServerSocket(PORT, 100, externalIp);
 
         } catch (IOException e){
-            System.out.println("com.pawelwuuu.Server creation failed because of IO problem.");
+            System.out.println("com.pawelwuuu.server.Server creation failed because of IO problem.");
         } catch (IllegalArgumentException e){
             System.out.println("Application port is out of range.");
         } catch (Throwable e){
-            System.out.println("com.pawelwuuu.Server construction failed, something gone wrong.");
+            System.out.println("com.pawelwuuu.server.Server construction failed, something gone wrong.");
         }
 
         this.serverTimestamp = Instant.EPOCH.getEpochSecond();

@@ -1,8 +1,10 @@
-package com.pawelwuuu;
+package com.pawelwuuu.client;
 
 import com.pawelwuuu.Exceptions.InvalidIpException;
 import com.pawelwuuu.Exceptions.InvalidNicknameException;
 import com.pawelwuuu.Exceptions.InvalidPasswordException;
+import com.pawelwuuu.Message;
+import com.pawelwuuu.Validator;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -14,7 +16,7 @@ import static com.pawelwuuu.jsonUtil.JsonManager.*;
 
 public class Client {
     private String nick, password;
-    private final int PORT = 43839;
+    private final int PORT = 43839;     //UNIQUE port of app
     Socket socket;
     boolean isOn = true;
     DataOutputStream output;
@@ -51,14 +53,6 @@ public class Client {
             isOn = false;
         }
     }
-
-//    public Client(String nick, String ServerIp) {
-//        this(nick, null ,ServerIp);
-//    }
-//
-//    public Client(String nick){
-//        this(nick, null, "127.0.0.1");
-//    }
 
     public void userInterface(){
         Thread receivingThread = new Thread(() -> userReceivingMessageInterface());

@@ -2,6 +2,8 @@ package com.pawelwuuu;
 
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
+import com.pawelwuuu.client.Client;
+import com.pawelwuuu.server.Server;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;

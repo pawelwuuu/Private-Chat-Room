@@ -1,15 +1,19 @@
 package com.pawelwuuu;
 
+/**
+ * Message that can be sent or received by a client. Contains information about sender (nickname) and content of the message.
+ */
 public class Message {
-    String timestamp, content, sender;
+    private String content, sender;
 
+    /**
+     * Constructs a message object.
+     * @param content string containing content of the message.
+     * @param sender string containing nickname of the sender.
+     */
     public Message(String content, String sender) {
         this.content = content;
         this.sender = sender;
-    }
-
-    public String getTimestamp() {
-        return timestamp;
     }
 
     public String getContent() {
@@ -20,15 +24,10 @@ public class Message {
         return sender;
     }
 
-    public void setTimestamp(String timestamp) {
-        this.timestamp = timestamp;
-    }
-
     @Override
     public String toString() {
-        return "com.pawelwuuu.Message{" +
-                "timestamp='" + timestamp + '\'' +
-                ", content='" + content + '\'' +
+        return "Message{" +
+                "content='" + content + '\'' +
                 ", sender='" + sender + '\'' +
                 '}';
     }
