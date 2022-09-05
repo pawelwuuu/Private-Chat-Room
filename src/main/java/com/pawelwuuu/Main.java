@@ -41,7 +41,7 @@ public class Main {
 
             if (isServer){
                 Server server = new Server(ip, password);
-                server.init();
+                server.init(false);
 
                 Client client = new Client(nick, password, ip.getHostAddress());
                 client.userInterface();

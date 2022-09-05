@@ -34,11 +34,11 @@ public class ConnectedUser {
         this.userInput = userInput;
     }
 
-    void closeConnection() throws IOException {
+    void closeConnection() {
         try {
             userSocket.close();
         } catch (IOException e){
-            throw e;
+            System.out.println("Cannot close connection with user.");
         }
     }
 

@@ -1,9 +1,6 @@
 package com.pawelwuuu.server;
 
 import com.pawelwuuu.Message;
-
-import javax.swing.*;
-
 import static com.pawelwuuu.jsonUtil.JsonManager.*;
 
 import java.io.DataInputStream;
@@ -13,7 +10,6 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.time.Instant;
-import java.util.HashSet;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 
@@ -21,8 +17,9 @@ public class Server {
     private ServerSocket server;
     private final long serverTimestamp; //todo add feature
     private final int PORT = 43839;
-//    private ConcurrentHashMap<Socket, DataOutputStream> outputStreams = new ConcurrentHashMap<>();
-//    private ConcurrentHashMap<Socket, DataInputStream> inputStreams = new ConcurrentHashMap<>();
+    Thread connectionManager;
+    Thread messageManager;
+
     private CopyOnWriteArrayList<ConnectedUser> connectedUsers = new CopyOnWriteArrayList<>();
     private final String password;
 
@@ -48,16 +45,14 @@ public class Server {
             DataOutputStream outputSocket = new DataOutputStream(clientSocket.getOutputStream());
             DataInputStream inputSocket = new DataInputStream(clientSocket.getInputStream());
 
-            String userNick = "";
+            String parsedPasswordMessage = receiveSocketMessage(inputSocket);
+            Message passwordMessage = objectDeserialization(parsedPasswordMessage, Message.class);
+            String receivedPassword = passwordMessage.getContent();
+
+            String userNick = passwordMessage.getSender();
 
             //TODO add encrypted password checking
             if (! password.equals("DEFAULT")) {
-                String parsedPasswordMessage = receiveSocketMessage(inputSocket);
-                Message passwordMessage = objectDeserialization(parsedPasswordMessage, Message.class);
-                String receivedPassword = passwordMessage.getContent();
-
-                userNick = passwordMessage.getSender();
-
                 if (! receivedPassword.equals(password)) {
                     sendMessage(
                             new Message("Password is wrong, connection denied.", "Server"),
@@ -65,10 +60,15 @@ public class Server {
                     clientSocket.close();
                     return;
                 }
-            }
 
-//            outputStreams.putIfAbsent(clientSocket, outputSocket);
-//            inputStreams.putIfAbsent(clientSocket, inputSocket);
+                if (isNickUsed(userNick)){
+                    sendMessage(
+                            new Message("Nickname already in use, connection denied.", "Server"),
+                            outputSocket);
+                    clientSocket.close();
+                    return;
+                }
+            }
 
             connectedUsers.add(
                     new ConnectedUser(userNick, clientSocket, outputSocket, inputSocket));
@@ -78,7 +78,7 @@ public class Server {
 
     }
 
-    void manageIncomingMessages(){
+    void manageIncomingMessages(boolean excludeSendingSocket){
         while (true){
             for (ConnectedUser connectedUser: connectedUsers) {
                 Socket clientSocket = connectedUser.getUserSocket();
@@ -86,21 +86,26 @@ public class Server {
 
                 try{
                     if (inputStream.available() > 0){
-                        String message = receiveSocketMessage(inputStream);     //receiving message
-                        if (objectDeserialization(message, Message.class).isContainingServerInformation()){
-                            continue;                                           //checking if message doesn't contain information for server
+                        String parsedMessage = receiveSocketMessage(inputStream);     //receiving message
+                        Message message = objectDeserialization(parsedMessage, Message.class);
+                        if (message.isContainingServerInformation()){           //checking if message doesn't contain information for server
+                            if (message.getContent().matches("/kick.+")){
+                               kickUser(message.getContent().substring(6));
+                            }
+
+                            continue;
                         }
-                        broadcastMessage(message, clientSocket);    //broadcasting message
+
+                        if (excludeSendingSocket) {
+                            broadcastMessage(parsedMessage, clientSocket);    //broadcasting message
+                        } else {
+                            broadcastMessage(parsedMessage);
+                        }
                     }
                 } catch (IOException e){
-                    try {
-                        connectedUser.closeConnection();
-                    } catch (IOException ex){
-                        // pass
-                    } finally {
-                        connectedUsers.remove(connectedUser);
-                    }
-                }
+                    connectedUser.closeConnection();
+                    connectedUsers.remove(connectedUser);
+                };
             }
 
         }
@@ -129,13 +134,8 @@ public class Server {
                     dataOutputStream.writeUTF(message);
                 }
             } catch (IOException e) {
-                try {
-                    connectedUser.closeConnection();
-                } catch (IOException ex){
-                    // pass
-                } finally {
-                    connectedUsers.remove(connectedUser);
-                }
+                connectedUser.closeConnection();
+                connectedUsers.remove(connectedUser);
             }
         }));
     }
@@ -155,14 +155,55 @@ public class Server {
         }
     }
 
-    public void init(){
+    public void init(boolean isGui){
         System.out.println("Server Started!");
         System.out.println("Your public ip is: " + ExternalIpChecker.getIp() + "\n");
 
-        Thread connectionManager = new Thread(() -> establishConnections());
+        connectionManager = new Thread(() -> establishConnections());
         connectionManager.start();
 
-        Thread messageManager = new Thread(() -> manageIncomingMessages());
+        if (isGui){
+            messageManager = new Thread(() -> manageIncomingMessages(false));
+        } else {
+            messageManager = new Thread(() -> manageIncomingMessages(true));
+        }
+
         messageManager.start();
+    }
+
+    public boolean isNickUsed(String nick){
+        for (ConnectedUser connectedUser: connectedUsers){
+            if (connectedUser.getNick().equals(nick)){
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public void shutdown() {
+        try {
+            server.close();
+        } catch (IOException e) {
+            System.out.println(e.getMessage());
+        } finally {
+            messageManager.interrupt();
+            messageManager = null;
+
+            connectionManager.interrupt();
+            connectionManager = null;
+
+            server = null;
+        }
+    }
+
+    void kickUser(String nick){
+        for (ConnectedUser connectedUser: connectedUsers){
+            if (connectedUser.getNick().equals(nick)){
+                connectedUser.closeConnection();
+
+                connectedUsers.remove(connectedUser);
+            }
+        }
     }
 }

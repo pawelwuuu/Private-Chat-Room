@@ -1,9 +1,6 @@
 package com.pawelwuuu.client;
 
-import com.pawelwuuu.Exceptions.InvalidIpException;
-import com.pawelwuuu.Exceptions.InvalidNicknameException;
-import com.pawelwuuu.Exceptions.InvalidPasswordException;
-import com.pawelwuuu.Exceptions.ValidatorException;
+import com.pawelwuuu.Exceptions.*;
 import com.pawelwuuu.Message;
 import com.pawelwuuu.Validator;
 
@@ -106,14 +103,13 @@ public class Client {
         }
     }
 
-    public void sendMessage(Message message) throws IOException {
-        try {
-            String serializedMessage = objectSerialization(message);
-
-            output.writeUTF(serializedMessage);
-        } catch (IOException e){
-            throw e;
+    public void sendMessage(Message message) throws IOException, MessageFormatException {
+        if (message.getContent().isBlank()) {
+            throw new MessageFormatException("Message cannot be blank or empty.");
         }
+        String serializedMessage = objectSerialization(message);
+
+        output.writeUTF(serializedMessage);
     }
 
     Message receiveMessage() throws IOException {
@@ -150,6 +146,10 @@ public class Client {
     }
 
     public Message createMessage(String content){
+        if (content.matches("/kick.+")){
+            return new Message(content, nick, true);
+        }
+
         return new Message(content, nick);
     }
 }
