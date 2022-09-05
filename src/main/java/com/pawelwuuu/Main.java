@@ -16,7 +16,7 @@ public class Main {
     boolean isServer = false;
 
     @Parameter(names = {"-p", "--password"}, description = "Password to chat room.")
-    String password;
+    String password = "DEFAULT";
 
     public static void main(String ... argv) {
         Main main = new Main();
@@ -24,22 +24,34 @@ public class Main {
                 .addObject(main)
                 .build()
                 .parse(argv);
+
         main.run();
     }
 //todo add command pattern
     public void run() {
-        if (isServer){
-            try{
-                InetAddress ip = InetAddress.getLocalHost();
-                Server server = new Server(ip, password);
-                server.init();
-            } catch (UnknownHostException e){
-                System.out.println("Something is wrong with IP address or host port.");
-            }
-        } else{
-            Client client = new Client(nick, password, "127.0.0.1");
-            client.userInterface();
+        InetAddress ip = null;
+        try{
+            ip = InetAddress.getLocalHost();
+        } catch (UnknownHostException e){
+            System.out.println("Something is wrong with IP address or host port.");
+            return;
         }
 
+        try {
+
+            if (isServer){
+                Server server = new Server(ip, password);
+                server.init();
+
+                Client client = new Client(nick, password, ip.getHostAddress());
+                client.userInterface();
+
+            } else{
+                Client client = new Client(nick, password, ip.getHostAddress());
+                client.userInterface();
+            }
+        } catch (Throwable e){
+            System.out.println(e.getMessage());
+        }
     }
 }

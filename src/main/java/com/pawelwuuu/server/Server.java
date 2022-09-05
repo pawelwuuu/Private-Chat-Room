@@ -2,6 +2,8 @@ package com.pawelwuuu.server;
 
 import com.pawelwuuu.Message;
 
+import javax.swing.*;
+
 import static com.pawelwuuu.jsonUtil.JsonManager.*;
 
 import java.io.DataInputStream;
@@ -11,15 +13,17 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.time.Instant;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.HashSet;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 
 public class Server {
     private ServerSocket server;
     private final long serverTimestamp; //todo add feature
     private final int PORT = 43839;
-    private ConcurrentHashMap<Socket, DataOutputStream> outputStreams = new ConcurrentHashMap<>();
-    private ConcurrentHashMap<Socket, DataInputStream> inputStreams = new ConcurrentHashMap<>();
+//    private ConcurrentHashMap<Socket, DataOutputStream> outputStreams = new ConcurrentHashMap<>();
+//    private ConcurrentHashMap<Socket, DataInputStream> inputStreams = new ConcurrentHashMap<>();
+    private CopyOnWriteArrayList<ConnectedUser> connectedUsers = new CopyOnWriteArrayList<>();
     private final String password;
 
     public Server(InetAddress serverIp, String password) {
@@ -44,11 +48,15 @@ public class Server {
             DataOutputStream outputSocket = new DataOutputStream(clientSocket.getOutputStream());
             DataInputStream inputSocket = new DataInputStream(clientSocket.getInputStream());
 
+            String userNick = "";
+
             //TODO add encrypted password checking
             if (! password.equals("DEFAULT")) {
                 String parsedPasswordMessage = receiveSocketMessage(inputSocket);
                 Message passwordMessage = objectDeserialization(parsedPasswordMessage, Message.class);
                 String receivedPassword = passwordMessage.getContent();
+
+                userNick = passwordMessage.getSender();
 
                 if (! receivedPassword.equals(password)) {
                     sendMessage(
@@ -59,23 +67,22 @@ public class Server {
                 }
             }
 
-            outputStreams.putIfAbsent(clientSocket, outputSocket);
-            inputStreams.putIfAbsent(clientSocket, inputSocket);
+//            outputStreams.putIfAbsent(clientSocket, outputSocket);
+//            inputStreams.putIfAbsent(clientSocket, inputSocket);
+
+            connectedUsers.add(
+                    new ConnectedUser(userNick, clientSocket, outputSocket, inputSocket));
         } catch (IOException e){
-            e.printStackTrace();
+            //pass
         }
 
     }
 
     void manageIncomingMessages(){
         while (true){
-            if (inputStreams.size() == 0){
-                continue;
-            }
-
-            for (var entry: inputStreams.entrySet()) {
-                Socket clientSocket = entry.getKey();
-                DataInputStream inputStream = entry.getValue();
+            for (ConnectedUser connectedUser: connectedUsers) {
+                Socket clientSocket = connectedUser.getUserSocket();
+                DataInputStream inputStream = connectedUser.getUserInput();
 
                 try{
                     if (inputStream.available() > 0){
@@ -86,8 +93,13 @@ public class Server {
                         broadcastMessage(message, clientSocket);    //broadcasting message
                     }
                 } catch (IOException e){
-                    inputStreams.remove(clientSocket);
-                    outputStreams.remove(clientSocket);
+                    try {
+                        connectedUser.closeConnection();
+                    } catch (IOException ex){
+                        // pass
+                    } finally {
+                        connectedUsers.remove(connectedUser);
+                    }
                 }
             }
 
@@ -108,14 +120,22 @@ public class Server {
     }
 
     void broadcastMessage(String message, Socket excludedSocket){
-        outputStreams.forEach(((socket, dataOutputStream) -> {
+        connectedUsers.forEach(( connectedUser -> {
             try {
+                Socket socket = connectedUser.getUserSocket();
+                DataOutputStream dataOutputStream = connectedUser.getUserOutput();
+
                 if (socket != excludedSocket){
                     dataOutputStream.writeUTF(message);
                 }
             } catch (IOException e) {
-                inputStreams.remove(socket);
-                outputStreams.remove(socket);
+                try {
+                    connectedUser.closeConnection();
+                } catch (IOException ex){
+                    // pass
+                } finally {
+                    connectedUsers.remove(connectedUser);
+                }
             }
         }));
     }
@@ -137,11 +157,12 @@ public class Server {
 
     public void init(){
         System.out.println("Server Started!");
-        System.out.println("");
+        System.out.println("Your public ip is: " + ExternalIpChecker.getIp() + "\n");
 
         Thread connectionManager = new Thread(() -> establishConnections());
         connectionManager.start();
 
-        manageIncomingMessages();
+        Thread messageManager = new Thread(() -> manageIncomingMessages());
+        messageManager.start();
     }
 }

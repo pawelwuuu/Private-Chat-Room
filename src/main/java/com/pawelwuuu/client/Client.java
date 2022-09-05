@@ -12,6 +12,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 import java.sql.SQLOutput;
+import java.time.Instant;
 import java.util.Scanner;
 import static com.pawelwuuu.jsonUtil.JsonManager.*;
 
@@ -23,7 +24,7 @@ public class Client {
     DataOutputStream output;
     DataInputStream input;
 
-    public Client(String nick, String password, String serverIp) {
+    public Client(String nick, String password, String serverIp) throws Throwable{
         try{
             if (! Validator.isNicknameCorrect(nick)){
                 throw new InvalidNicknameException();
@@ -43,17 +44,9 @@ public class Client {
             this.output = new DataOutputStream(socket.getOutputStream());
             this.input = new DataInputStream(socket.getInputStream());
 
-            sendMessage(new Message(password, "<!@PASSWORD@!>")); //sends message with password
-
-
-        } catch (IOException e){
-            System.out.println("Connection with server failed: " + e.getMessage());
-            isOn = false;
-        } catch (IllegalArgumentException e){
-            System.out.println("Port value is wrong, probably out of range.");
-            isOn = false;
-        } catch (ValidatorException e){
-            System.out.println(e.getMessage());
+            sendMessage(new Message(password, nick, true)); //sends message with password
+        } catch (Throwable e){
+            throw e;
         }
     }
 
@@ -129,6 +122,28 @@ public class Client {
             Message message = objectDeserialization(serializedMessage, Message.class);
 
             return message;
+        } catch (IOException e){
+            throw e;
+        }
+    }
+
+    public String receiveFormattedMessage() throws IOException{
+        try {
+            Message receivedMessage = receiveMessage();
+            String formattedReceivedMsg = receivedMessage.getSender() + ": " + receivedMessage.getContent();
+            return formattedReceivedMsg;
+        } catch (IOException e) {
+            throw e;
+        }
+    }
+
+    public boolean isInputAvailable() throws IOException {
+        try{
+            if (input.available() > 0){
+                return true;
+            }
+
+            return false;
         } catch (IOException e){
             throw e;
         }
