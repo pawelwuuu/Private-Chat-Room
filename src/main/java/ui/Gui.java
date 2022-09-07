@@ -3,6 +3,7 @@ package ui;
 import com.pawelwuuu.Exceptions.MessageFormatException;
 import com.pawelwuuu.Message;
 import com.pawelwuuu.client.Client;
+import com.pawelwuuu.ExternalIpChecker;
 import com.pawelwuuu.server.Server;
 
 import javax.swing.*;
@@ -10,7 +11,6 @@ import javax.swing.text.JTextComponent;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -33,6 +33,7 @@ public class Gui {
     private JTextArea errorTextArea;
     private JPanel settingsCard;
     private JPanel clientCard;
+    private JLabel ipInformation;
     private Client client;
     private Server server;
     private JScrollPane jScrollPane;
@@ -99,7 +100,9 @@ public class Gui {
                     client = new Client(nick, password, ip.getHostAddress());
 
                     cardLayout.show(cardPanel, "client");       //setting the client chat card visible
-                    messageBox.setSize(700, 550);
+
+                    ipInformation.setText("Your public ip is: " + ExternalIpChecker.getIp());
+                    ipInformation.setVisible(true);
             } else if (clientRadioButton.isSelected()){
                     client = new Client(nick, password, ipField.getText());
 
@@ -125,7 +128,9 @@ public class Gui {
 
     public void sendMessage(Client client, JTextComponent messageInputField){
         try{
-            if (messageInputField.getText().matches("/kick.+") && ! serverRadioButton.isSelected()){
+            if ((messageInputField.getText().matches("/kick.+") || messageInputField.getText().matches("/ban.+"))
+                    && ! serverRadioButton.isSelected()){
+
                 JOptionPane.showMessageDialog(clientCard, "No permissions to use that command");
                 return;
             }

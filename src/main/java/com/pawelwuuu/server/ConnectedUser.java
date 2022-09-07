@@ -3,6 +3,7 @@ package com.pawelwuuu.server;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.Socket;
 
 /**
@@ -34,12 +35,20 @@ public class ConnectedUser {
         this.userInput = userInput;
     }
 
-    void closeConnection() {
+    public void closeConnection() {
         try {
             userSocket.close();
         } catch (IOException e){
             System.out.println("Cannot close connection with user.");
+        } finally {
+            userSocket = null;
+            userOutput = null;
+            userInput = null;
         }
+    }
+
+    public InetAddress getInetAddress(){
+        return userSocket.getInetAddress();
     }
 
     public String getNick() {

@@ -1,5 +1,6 @@
 package com.pawelwuuu.server;
 
+import com.pawelwuuu.Exceptions.UnknownCommandException;
 import com.pawelwuuu.Message;
 import static com.pawelwuuu.jsonUtil.JsonManager.*;
 
@@ -10,6 +11,7 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.time.Instant;
+import java.util.HashSet;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 
@@ -21,6 +23,7 @@ public class Server {
     Thread messageManager;
 
     private CopyOnWriteArrayList<ConnectedUser> connectedUsers = new CopyOnWriteArrayList<>();
+    private CopyOnWriteArrayList<InetAddress> bannedUsers = new CopyOnWriteArrayList<>();
     private final String password;
 
     public Server(InetAddress serverIp, String password) {
@@ -51,6 +54,14 @@ public class Server {
 
             String userNick = passwordMessage.getSender();
 
+            if (bannedUsers.contains(clientSocket.getInetAddress())){
+                sendMessage(
+                        new Message("You are banned from this server, connection denied.", "Server"),
+                        outputSocket);
+                clientSocket.close();
+                return;
+            }
+
             //TODO add encrypted password checking
             if (! password.equals("DEFAULT")) {
                 if (! receivedPassword.equals(password)) {
@@ -60,20 +71,21 @@ public class Server {
                     clientSocket.close();
                     return;
                 }
+            }
 
-                if (isNickUsed(userNick)){
-                    sendMessage(
-                            new Message("Nickname already in use, connection denied.", "Server"),
-                            outputSocket);
-                    clientSocket.close();
-                    return;
-                }
+            if (isNickUsed(userNick)){
+                sendMessage(
+                        new Message("Nickname already in use, connection denied.", "Server"),
+                        outputSocket);
+                clientSocket.close();
+                return;
             }
 
             connectedUsers.add(
                     new ConnectedUser(userNick, clientSocket, outputSocket, inputSocket));
+            broadcastMessage(new Message(userNick + " connected to the chat.", "Server"));
         } catch (IOException e){
-            //pass
+            e.printStackTrace();
         }
 
     }
@@ -89,10 +101,11 @@ public class Server {
                         String parsedMessage = receiveSocketMessage(inputStream);     //receiving message
                         Message message = objectDeserialization(parsedMessage, Message.class);
                         if (message.isContainingServerInformation()){           //checking if message doesn't contain information for server
-                            if (message.getContent().matches("/kick.+")){
-                               kickUser(message.getContent().substring(6));
+                            try {
+                                CommandExecutor.executeCommand(message, this);
+                            } catch (UnknownCommandException e) {
+                                sendMessage(new Message(e.getMessage(), "Server"), connectedUser);
                             }
-
                             continue;
                         }
 
@@ -120,18 +133,25 @@ public class Server {
 
     }
 
-    void broadcastMessage(String message){
-        broadcastMessage(message, null);
+    public void broadcastMessage(Message message){
+        broadcastMessage(objectSerialization(message));
+    }
+    void broadcastMessage(Message message, Socket excludedSocket){
+        broadcastMessage(objectSerialization(message), excludedSocket);
     }
 
-    void broadcastMessage(String message, Socket excludedSocket){
+    void broadcastMessage(String parsedMessage){
+        broadcastMessage(parsedMessage, null);
+    }
+
+    void broadcastMessage(String parsedMessage, Socket excludedSocket){
         connectedUsers.forEach(( connectedUser -> {
             try {
                 Socket socket = connectedUser.getUserSocket();
                 DataOutputStream dataOutputStream = connectedUser.getUserOutput();
 
                 if (socket != excludedSocket){
-                    dataOutputStream.writeUTF(message);
+                    dataOutputStream.writeUTF(parsedMessage);
                 }
             } catch (IOException e) {
                 connectedUser.closeConnection();
@@ -154,10 +174,17 @@ public class Server {
             throw e;
         }
     }
+    public void sendMessage(Message message, ConnectedUser connectedUser) throws IOException {
+        try {
+            String parsedMessage = objectSerialization(message);
+            connectedUser.getUserOutput().writeUTF(parsedMessage);
+        } catch (IOException e){
+            throw e;
+        }
+    }
 
     public void init(boolean isGui){
         System.out.println("Server Started!");
-        System.out.println("Your public ip is: " + ExternalIpChecker.getIp() + "\n");
 
         connectionManager = new Thread(() -> establishConnections());
         connectionManager.start();
@@ -203,7 +230,43 @@ public class Server {
                 connectedUser.closeConnection();
 
                 connectedUsers.remove(connectedUser);
+                broadcastMessage(new Message(connectedUser.getNick() + " has been kicked from the chat.", "Server"));
             }
         }
+    }
+
+    void listUser(ConnectedUser requestingUser){
+        try {
+            String nicks = "";
+            for (ConnectedUser connectedUser: connectedUsers){
+                nicks += connectedUser.getNick() + ", ";
+            }
+
+            sendMessage(new Message("connected users are: " + nicks, "Server"), requestingUser);
+        } catch (IOException e) {
+            requestingUser.closeConnection();
+            connectedUsers.remove(requestingUser);
+        }
+    }
+
+    void banUser(String nick){
+        for (ConnectedUser connectedUser: connectedUsers){
+            if (connectedUser.getNick().equals(nick)){
+
+                bannedUsers.add(connectedUser.getInetAddress());
+                connectedUser.closeConnection();
+
+                connectedUsers.remove(connectedUser);
+                broadcastMessage(new Message(connectedUser.getNick() + " has been banned.", "Server"));
+            }
+        }
+    }
+
+    public CopyOnWriteArrayList<ConnectedUser> getConnectedUsers() {
+        return connectedUsers;
+    }
+
+    public CopyOnWriteArrayList<InetAddress> getBannedUsers() {
+        return bannedUsers;
     }
 }

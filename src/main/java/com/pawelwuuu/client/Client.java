@@ -146,7 +146,7 @@ public class Client {
     }
 
     public Message createMessage(String content){
-        if (content.matches("/kick.+")){
+        if (content.startsWith("/")){
             return new Message(content, nick, true);
         }
 
