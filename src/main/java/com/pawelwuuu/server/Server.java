@@ -104,7 +104,7 @@ public class Server {
                             try {
                                 CommandExecutor.executeCommand(message, this);
                             } catch (UnknownCommandException e) {
-                                sendMessage(new Message(e.getMessage(), "Server"), connectedUser);
+                                sendMessage(new Message(e.getMessage() + " Use /help command.", "Server"), connectedUser);
                             }
                             continue;
                         }

@@ -3,6 +3,7 @@ package com.pawelwuuu.server;
 import com.pawelwuuu.Exceptions.UnknownCommandException;
 import com.pawelwuuu.Message;
 import com.pawelwuuu.server.commands.BanCommand;
+import com.pawelwuuu.server.commands.HelpCommand;
 import com.pawelwuuu.server.commands.KickCommand;
 import com.pawelwuuu.server.commands.ListCommand;
 
@@ -20,6 +21,10 @@ public class CommandExecutor {
 
         else if (message.getContent().matches("/ban.+")){
             concreteCommand = new BanCommand(server, message.getContent().substring(5));
+        }
+
+        else if (message.getContent().equals("/help")){
+            concreteCommand = new HelpCommand(server, message);
         }
 
         else {
