@@ -1,19 +1,19 @@
-package ui;
+package com.pawelwuuu.ui;
 
 import com.pawelwuuu.Exceptions.MessageFormatException;
 import com.pawelwuuu.Message;
 import com.pawelwuuu.client.Client;
 import com.pawelwuuu.ExternalIpChecker;
+import com.pawelwuuu.jsonUtil.StringHash;
 import com.pawelwuuu.server.Server;
 
 import javax.swing.*;
 import javax.swing.text.JTextComponent;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.io.IOException;
 import java.net.InetAddress;
+import java.security.NoSuchAlgorithmException;
 import java.util.List;
 
 public class Gui {
@@ -36,50 +36,24 @@ public class Gui {
     private JLabel ipInformation;
     private Client client;
     private Server server;
-    private JScrollPane jScrollPane;
 
-    private CardLayout cardLayout = (CardLayout)cardPanel.getLayout();
+    private final CardLayout cardLayout = (CardLayout)cardPanel.getLayout();
 
     public Gui() {
-        confirmButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                initChat();     //creating client and working server
+        confirmButton.addActionListener(e -> {
+            initChat();     //creating client and working server
 
-                new MessageBoxTask(messageBox).execute();           //receive
-            }
+            new MessageBoxTask(messageBox).execute();           //receive
         });
 
-        cancelButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                System.exit(0);
-            }
-        });
-        sendMessageButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                sendMessage(client, messageInputField);
-            }
-        });
-        clientCard.registerKeyboardAction(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                sendMessage(client, messageInputField);
-            }
-        }, KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0), JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
-        serverRadioButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                ipField.setEnabled(false);
-            }
-        });
-        clientRadioButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                ipField.setEnabled(true);
-            }
-        });
+        cancelButton.addActionListener(e -> System.exit(0));
+        sendMessageButton.addActionListener(e -> sendMessage(client, messageInputField));
+        clientCard.registerKeyboardAction(e ->
+                sendMessage(client, messageInputField),
+                KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0),
+                JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
+        serverRadioButton.addActionListener(e -> ipField.setEnabled(false));
+        clientRadioButton.addActionListener(e -> ipField.setEnabled(true));
     }
 
     void initChat(){
@@ -88,13 +62,21 @@ public class Gui {
             password = "DEFAULT";
         }
 
+        String hashedPassword;
+        try {
+            hashedPassword = StringHash.hash(password);
+        } catch (NoSuchAlgorithmException e) {
+            errorTextArea.setText("Problem with password encoding has occurred.");
+            return;
+        }
+
         String nick = nickField.getText();
 
         try {
             if (serverRadioButton.isSelected()){
                     InetAddress ip = InetAddress.getLocalHost();
 
-                    server = new Server(ip, password);
+                    server = new Server(ip, hashedPassword);
                     server.init(true);
 
                     client = new Client(nick, password, ip.getHostAddress());
@@ -107,7 +89,6 @@ public class Gui {
                     client = new Client(nick, password, ipField.getText());
 
                     cardLayout.show(cardPanel, "client");       //setting the client chat card visible
-                    upperPanel.setSize(700, 550);
             }
         } catch (Throwable e) {
             errorTextArea.setText(e.getMessage());
@@ -156,7 +137,7 @@ public class Gui {
         }
 
         @Override
-        protected String doInBackground() throws Exception {
+        protected String doInBackground() {
             while (true){
                 try {
                     if (client.isInputAvailable()){

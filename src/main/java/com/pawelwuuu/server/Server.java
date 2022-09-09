@@ -11,7 +11,6 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.time.Instant;
-import java.util.HashSet;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 
@@ -63,15 +62,14 @@ public class Server {
             }
 
             //TODO add encrypted password checking
-            if (! password.equals("DEFAULT")) {
-                if (! receivedPassword.equals(password)) {
+            if (! receivedPassword.equals(password)) {
                     sendMessage(
                             new Message("Password is wrong, connection denied.", "Server"),
                             outputSocket);
                     clientSocket.close();
                     return;
-                }
             }
+
 
             if (isNickUsed(userNick)){
                 sendMessage(

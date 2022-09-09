@@ -3,24 +3,35 @@ package com.pawelwuuu.client;
 import com.pawelwuuu.Exceptions.*;
 import com.pawelwuuu.Message;
 import com.pawelwuuu.Validator;
+import com.pawelwuuu.jsonUtil.StringHash;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
-import java.sql.SQLOutput;
-import java.time.Instant;
+import java.security.NoSuchAlgorithmException;
 import java.util.Scanner;
 import static com.pawelwuuu.jsonUtil.JsonManager.*;
 
+/**
+ * Represents a client side from client - server connection. It can connect to the server, send a message to the server
+ * and receive a message from the server. Client by default works on port 43839. Represents a user by specified nickname.
+ */
 public class Client {
-    private String nick, password;
-    private final int PORT = 43839;     //UNIQUE port of app
-    Socket socket;
-    boolean isOn = true;
-    DataOutputStream output;
-    DataInputStream input;
+    private final String nick;
+    private Socket socket;
+    private boolean isOn = true;
+    private DataOutputStream output;
+    private DataInputStream input;
+    private final int PORT = 43839;
 
+    /**
+     * Constructs a client object with specified nick, password to chat room and ip to connect to.
+     * @param nick string containing nickname.
+     * @param password string containing password to the server chat room.
+     * @param serverIp string representation of ip. For instance 100.200.100.50.
+     * @throws Throwable error that occurred during construction of the object.
+     */
     public Client(String nick, String password, String serverIp) throws Throwable{
         try{
             if (! Validator.isNicknameCorrect(nick)){
@@ -31,24 +42,30 @@ public class Client {
             if (password != null &&  ! Validator.isPasswordCorrect(password)){
                 throw new InvalidPasswordException();
             }
-            this.password = password;
 
             if (serverIp != null && ! Validator.IsIpCorrect(serverIp)){
                 throw new InvalidIpException();
             }
+            //UNIQUE port of app
             this.socket = new Socket(serverIp, PORT);
 
             this.output = new DataOutputStream(socket.getOutputStream());
             this.input = new DataInputStream(socket.getInputStream());
 
-            sendMessage(new Message(password, nick, true)); //sends message with password
+            String hashedPassword;
+            hashedPassword = StringHash.hash(password);
+
+            sendMessage(new Message(hashedPassword, nick, true)); //sends message with password
         } catch (Throwable e){
             throw e;
         }
     }
 
+    /**
+     *
+     */
     public void userInterface(){
-        Thread receivingThread = new Thread(() -> userReceivingMessageInterface());
+        Thread receivingThread = new Thread(this::userReceivingMessageInterface);
         receivingThread.start();
 
         userSendingMessageInterface();
@@ -135,11 +152,7 @@ public class Client {
 
     public boolean isInputAvailable() throws IOException {
         try{
-            if (input.available() > 0){
-                return true;
-            }
-
-            return false;
+            return input.available() > 0;
         } catch (IOException e){
             throw e;
         }
