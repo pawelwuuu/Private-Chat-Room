@@ -40,10 +40,6 @@ public class ConnectedUser {
             userSocket.close();
         } catch (IOException e){
             System.out.println("Cannot close connection with user.");
-        } finally {
-            userSocket = null;
-            userOutput = null;
-            userInput = null;
         }
     }
 

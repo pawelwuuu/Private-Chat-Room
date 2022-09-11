@@ -2,7 +2,7 @@ package com.pawelwuuu.server;
 
 import com.pawelwuuu.Exceptions.UnknownCommandException;
 import com.pawelwuuu.Message;
-import static com.pawelwuuu.jsonUtil.JsonManager.*;
+import static com.pawelwuuu.utils.JsonManager.*;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -13,32 +13,29 @@ import java.net.Socket;
 import java.time.Instant;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-
 public class Server {
     private ServerSocket server;
     private final long serverTimestamp; //todo add feature
     private final int PORT = 43839;
     Thread connectionManager;
     Thread messageManager;
+    volatile boolean isOn;
 
     private CopyOnWriteArrayList<ConnectedUser> connectedUsers = new CopyOnWriteArrayList<>();
     private CopyOnWriteArrayList<InetAddress> bannedUsers = new CopyOnWriteArrayList<>();
     private final String password;
 
-    public Server(InetAddress serverIp, String password) {
-        try{
+    public Server(InetAddress serverIp, String password) throws IOException {
+        try {
             this.server = new ServerSocket(PORT, 100, serverIp);
 
-        } catch (IOException e){
-            System.out.println("Server creation failed because of IO problem.");
-        } catch (IllegalArgumentException e){
-            System.out.println("Application port is out of range.");
         } catch (Throwable e){
-            System.out.println("Server construction failed, something gone wrong.");
+            throw e;
         }
 
         this.serverTimestamp = Instant.EPOCH.getEpochSecond();
         this.password = password;
+        this.isOn = true;
     }
 
      void establishConnection(){
@@ -82,14 +79,13 @@ public class Server {
             connectedUsers.add(
                     new ConnectedUser(userNick, clientSocket, outputSocket, inputSocket));
             broadcastMessage(new Message(userNick + " connected to the chat.", "Server"));
-        } catch (IOException e){
+        } catch (Throwable e){
             e.printStackTrace();
         }
-
     }
 
-    void manageIncomingMessages(boolean excludeSendingSocket){
-        while (true){
+     void manageIncomingMessages(boolean excludeSendingSocket){
+        while (isOn){
             for (ConnectedUser connectedUser: connectedUsers) {
                 Socket clientSocket = connectedUser.getUserSocket();
                 DataInputStream inputStream = connectedUser.getUserInput();
@@ -114,52 +110,72 @@ public class Server {
                         }
                     }
                 } catch (IOException e){
-                    connectedUser.closeConnection();
-                    connectedUsers.remove(connectedUser);
-                };
+                    synchronized (this) {
+                        if (! connectedUsers.contains(connectedUser)){
+                            continue;
+                        }
+
+                        connectedUser.closeConnection();
+
+                        String msg = connectedUser.getNick() + " has disconnected.";
+                        connectedUsers.remove(connectedUser);
+                        broadcastMessage(new Message(msg, "Server"));
+                    }
+                } catch (Throwable e){
+                    e.printStackTrace();
+                }
             }
 
         }
     }
 
-     public String receiveSocketMessage(DataInputStream socketInputStream) throws IOException{
-        try{
-            return socketInputStream.readUTF();
-        } catch (IOException e){
-            throw e;
-        }
+    public void broadcastMessage(String parsedMessage, Socket excludedSocket){
+        for (ConnectedUser connectedUser: connectedUsers) {
+            try {
+                Socket socket = connectedUser.getUserSocket();
+                DataOutputStream dataOutputStream = connectedUser.getUserOutput();
 
+                if (socket != excludedSocket) {
+                    dataOutputStream.writeUTF(parsedMessage);
+                }
+            } catch (IOException e) {
+                synchronized (this) {
+                    if (! connectedUsers.contains(connectedUser)){
+                        continue;
+                    }
+
+                    connectedUser.closeConnection();
+
+                    String msg = connectedUser.getNick() + " has disconnected.";
+                    connectedUsers.remove(connectedUser);
+                    broadcastMessage(new Message(msg, "Server", false));
+                }
+            } catch (Throwable e){
+                e.printStackTrace();
+            }
+        }
     }
 
     public void broadcastMessage(Message message){
-        broadcastMessage(objectSerialization(message));
+        broadcastMessage(objectSerialization(message), null);
     }
-    void broadcastMessage(Message message, Socket excludedSocket){
-        broadcastMessage(objectSerialization(message), excludedSocket);
-    }
+
 
     void broadcastMessage(String parsedMessage){
         broadcastMessage(parsedMessage, null);
     }
 
-    void broadcastMessage(String parsedMessage, Socket excludedSocket){
-        connectedUsers.forEach(( connectedUser -> {
-            try {
-                Socket socket = connectedUser.getUserSocket();
-                DataOutputStream dataOutputStream = connectedUser.getUserOutput();
+     public String receiveSocketMessage(DataInputStream socketInputStream) throws IOException{
+        try{
+            return socketInputStream.readUTF();
+        } catch (Throwable e){
+            throw e;
+        }
 
-                if (socket != excludedSocket){
-                    dataOutputStream.writeUTF(parsedMessage);
-                }
-            } catch (IOException e) {
-                connectedUser.closeConnection();
-                connectedUsers.remove(connectedUser);
-            }
-        }));
     }
 
     public void establishConnections(){
-        while (true){
+        while (isOn){
             establishConnection();
         }
     }
@@ -168,15 +184,14 @@ public class Server {
         try {
             String parsedMessage = objectSerialization(message);
             outputStream.writeUTF(parsedMessage);
-        } catch (IOException e){
+        } catch (Throwable e){
             throw e;
         }
     }
     public void sendMessage(Message message, ConnectedUser connectedUser) throws IOException {
         try {
-            String parsedMessage = objectSerialization(message);
-            connectedUser.getUserOutput().writeUTF(parsedMessage);
-        } catch (IOException e){
+            sendMessage(message, connectedUser.getUserOutput());
+        } catch (Throwable e){
             throw e;
         }
     }
@@ -192,7 +207,6 @@ public class Server {
         } else {
             messageManager = new Thread(() -> manageIncomingMessages(true));
         }
-
         messageManager.start();
     }
 
@@ -209,54 +223,10 @@ public class Server {
     public void shutdown() {
         try {
             server.close();
-        } catch (IOException e) {
-            System.out.println(e.getMessage());
-        } finally {
-            messageManager.interrupt();
-            messageManager = null;
-
-            connectionManager.interrupt();
-            connectionManager = null;
-
+            isOn = false;
             server = null;
-        }
-    }
-
-    void kickUser(String nick){
-        for (ConnectedUser connectedUser: connectedUsers){
-            if (connectedUser.getNick().equals(nick)){
-                connectedUser.closeConnection();
-
-                connectedUsers.remove(connectedUser);
-                broadcastMessage(new Message(connectedUser.getNick() + " has been kicked from the chat.", "Server"));
-            }
-        }
-    }
-
-    void listUser(ConnectedUser requestingUser){
-        try {
-            String nicks = "";
-            for (ConnectedUser connectedUser: connectedUsers){
-                nicks += connectedUser.getNick() + ", ";
-            }
-
-            sendMessage(new Message("connected users are: " + nicks, "Server"), requestingUser);
-        } catch (IOException e) {
-            requestingUser.closeConnection();
-            connectedUsers.remove(requestingUser);
-        }
-    }
-
-    void banUser(String nick){
-        for (ConnectedUser connectedUser: connectedUsers){
-            if (connectedUser.getNick().equals(nick)){
-
-                bannedUsers.add(connectedUser.getInetAddress());
-                connectedUser.closeConnection();
-
-                connectedUsers.remove(connectedUser);
-                broadcastMessage(new Message(connectedUser.getNick() + " has been banned.", "Server"));
-            }
+        } catch (Throwable e) {
+            e.printStackTrace();
         }
     }
 

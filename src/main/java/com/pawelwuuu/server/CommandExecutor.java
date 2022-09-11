@@ -2,10 +2,7 @@ package com.pawelwuuu.server;
 
 import com.pawelwuuu.Exceptions.UnknownCommandException;
 import com.pawelwuuu.Message;
-import com.pawelwuuu.server.commands.BanCommand;
-import com.pawelwuuu.server.commands.HelpCommand;
-import com.pawelwuuu.server.commands.KickCommand;
-import com.pawelwuuu.server.commands.ListCommand;
+import com.pawelwuuu.server.commands.*;
 
 public class CommandExecutor {
 
@@ -25,6 +22,10 @@ public class CommandExecutor {
 
         else if (message.getContent().equals("/help")){
             concreteCommand = new HelpCommand(server, message);
+        }
+
+        else if (message.getContent().equals("/disconnect")){
+            concreteCommand = new DisconnectCommand(server, message.getSender());
         }
 
         else {

@@ -4,13 +4,15 @@ import com.pawelwuuu.Exceptions.MessageFormatException;
 import com.pawelwuuu.Message;
 import com.pawelwuuu.client.Client;
 import com.pawelwuuu.ExternalIpChecker;
-import com.pawelwuuu.jsonUtil.StringHash;
+import com.pawelwuuu.utils.StringHash;
 import com.pawelwuuu.server.Server;
 
 import javax.swing.*;
 import javax.swing.text.JTextComponent;
 import java.awt.*;
 import java.awt.event.KeyEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.security.NoSuchAlgorithmException;
@@ -34,16 +36,16 @@ public class Gui {
     private JPanel settingsCard;
     private JPanel clientCard;
     private JLabel ipInformation;
+    private JFrame frame;
     private Client client;
     private Server server;
 
+
     private final CardLayout cardLayout = (CardLayout)cardPanel.getLayout();
 
-    public Gui() {
+    public Gui(JFrame frame) {
         confirmButton.addActionListener(e -> {
             initChat();     //creating client and working server
-
-            new MessageBoxTask(messageBox).execute();           //receive
         });
 
         cancelButton.addActionListener(e -> System.exit(0));
@@ -54,6 +56,17 @@ public class Gui {
                 JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
         serverRadioButton.addActionListener(e -> ipField.setEnabled(false));
         clientRadioButton.addActionListener(e -> ipField.setEnabled(true));
+        frame.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                try {
+                    client.sendMessage(client.createMessage("/disconnect"));
+                    System.exit(0);
+                } catch (Throwable ex) {
+                    ex.printStackTrace();
+                }
+            }
+        });
     }
 
     void initChat(){
@@ -74,22 +87,23 @@ public class Gui {
 
         try {
             if (serverRadioButton.isSelected()){
-                    InetAddress ip = InetAddress.getLocalHost();
+                InetAddress ip = InetAddress.getLocalHost();
+                server = new Server(ip, hashedPassword);
 
-                    server = new Server(ip, hashedPassword);
-                    server.init(true);
+                client = new Client(nick, password, ip.getHostAddress());
+                server.init(true);
 
-                    client = new Client(nick, password, ip.getHostAddress());
+                cardLayout.show(cardPanel, "client");       //setting the client chat card visible
 
-                    cardLayout.show(cardPanel, "client");       //setting the client chat card visible
-
-                    ipInformation.setText("Your public ip is: " + ExternalIpChecker.getIp());
-                    ipInformation.setVisible(true);
+                ipInformation.setText("Your public ip is: " + ExternalIpChecker.getIp());
+                ipInformation.setVisible(true);
             } else if (clientRadioButton.isSelected()){
-                    client = new Client(nick, password, ipField.getText());
+                client = new Client(nick, password, ipField.getText());
 
-                    cardLayout.show(cardPanel, "client");       //setting the client chat card visible
+                cardLayout.show(cardPanel, "client");       //setting the client chat card visible
             }
+
+            new MessageBoxTask(messageBox).execute();           //receive messages
         } catch (Throwable e) {
             errorTextArea.setText(e.getMessage());
 
@@ -100,7 +114,7 @@ public class Gui {
 
     public static void main(String[] args) {
         JFrame frame = new JFrame("Private Chat Room");
-        frame.setContentPane(new Gui().cardPanel);
+        frame.setContentPane(new Gui(frame).cardPanel);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.pack();
         frame.setLocationRelativeTo(null);
@@ -143,7 +157,7 @@ public class Gui {
                     if (client.isInputAvailable()){
                         publish(client.receiveFormattedMessage());
                     }
-                } catch (IOException e){
+                } catch (Throwable e){
                     e.printStackTrace();
 //                    break; //todo enhance this
                 }

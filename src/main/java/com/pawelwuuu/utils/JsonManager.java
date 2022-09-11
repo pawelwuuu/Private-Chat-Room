@@ -1,4 +1,4 @@
-package com.pawelwuuu.jsonUtil;
+package com.pawelwuuu.utils;
 
 import com.google.gson.Gson;
 

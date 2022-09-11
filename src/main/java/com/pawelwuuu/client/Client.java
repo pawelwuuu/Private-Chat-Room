@@ -3,15 +3,14 @@ package com.pawelwuuu.client;
 import com.pawelwuuu.Exceptions.*;
 import com.pawelwuuu.Message;
 import com.pawelwuuu.Validator;
-import com.pawelwuuu.jsonUtil.StringHash;
+import com.pawelwuuu.utils.StringHash;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
-import java.security.NoSuchAlgorithmException;
 import java.util.Scanner;
-import static com.pawelwuuu.jsonUtil.JsonManager.*;
+import static com.pawelwuuu.utils.JsonManager.*;
 
 /**
  * Represents a client side from client - server connection. It can connect to the server, send a message to the server
@@ -135,7 +134,7 @@ public class Client {
             Message message = objectDeserialization(serializedMessage, Message.class);
 
             return message;
-        } catch (IOException e){
+        } catch (Throwable e){
             throw e;
         }
     }
@@ -145,7 +144,7 @@ public class Client {
             Message receivedMessage = receiveMessage();
             String formattedReceivedMsg = receivedMessage.getSender() + ": " + receivedMessage.getContent();
             return formattedReceivedMsg;
-        } catch (IOException e) {
+        } catch (Throwable e) {
             throw e;
         }
     }
