@@ -142,7 +142,10 @@ public class Client {
     public String receiveFormattedMessage() throws IOException{
         try {
             Message receivedMessage = receiveMessage();
-            String formattedReceivedMsg = receivedMessage.getSender() + ": " + receivedMessage.getContent();
+            String formattedReceivedMsg =
+                    receivedMessage.getTimestamp() + " | " +
+                    receivedMessage.getSender() + ": " + receivedMessage.getContent();
+
             return formattedReceivedMsg;
         } catch (Throwable e) {
             throw e;

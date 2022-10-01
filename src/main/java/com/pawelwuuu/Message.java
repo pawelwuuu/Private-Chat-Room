@@ -1,5 +1,9 @@
 package com.pawelwuuu;
 
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+
 /**
  * Message that can be sent or received by a client. Contains information about sender (nickname), content of the message
  * and information that indicates if the message have information for server or client backend view only (password).
@@ -7,6 +11,7 @@ package com.pawelwuuu;
 public class Message {
     private String content, sender;
     private boolean containingServerInformation;
+    private String timestamp;
 
     /**
      * Constructs a message object.
@@ -18,6 +23,10 @@ public class Message {
         this.content = content;
         this.sender = sender;
         this.containingServerInformation = containingServerInformation;
+
+        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("HH:mm");
+        LocalDateTime now = LocalDateTime.now();
+        this.timestamp = dtf.format(now);
     }
 
     /**
@@ -39,6 +48,10 @@ public class Message {
 
     public boolean isContainingServerInformation() {
         return containingServerInformation;
+    }
+
+    public String getTimestamp() {
+        return timestamp;
     }
 
     @Override

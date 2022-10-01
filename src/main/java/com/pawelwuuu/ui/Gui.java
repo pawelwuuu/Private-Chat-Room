@@ -3,7 +3,7 @@ package com.pawelwuuu.ui;
 import com.pawelwuuu.Exceptions.MessageFormatException;
 import com.pawelwuuu.Message;
 import com.pawelwuuu.client.Client;
-import com.pawelwuuu.ExternalIpChecker;
+import com.pawelwuuu.utils.ExternalIpChecker;
 import com.pawelwuuu.utils.StringHash;
 import com.pawelwuuu.server.Server;
 

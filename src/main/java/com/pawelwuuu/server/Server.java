@@ -15,7 +15,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 public class Server {
     private ServerSocket server;
-    private final long serverTimestamp; //todo add feature
     private final int PORT = 43839;
     Thread connectionManager;
     Thread messageManager;
@@ -33,7 +32,6 @@ public class Server {
             throw e;
         }
 
-        this.serverTimestamp = Instant.EPOCH.getEpochSecond();
         this.password = password;
         this.isOn = true;
     }
@@ -149,6 +147,8 @@ public class Server {
                     String msg = connectedUser.getNick() + " has disconnected.";
                     connectedUsers.remove(connectedUser);
                     broadcastMessage(new Message(msg, "Server", false));
+                    System.out.println(msg);
+
                 }
             } catch (Throwable e){
                 e.printStackTrace();

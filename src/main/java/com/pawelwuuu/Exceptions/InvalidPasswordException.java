@@ -1,5 +1,9 @@
 package com.pawelwuuu.Exceptions;
 
+/**
+ * InvalidPasswordException expands ValidatorException. Throw when validation of password gone wrong. For example if
+ * password contains forbidden characters or it's length is invalid.
+ */
 public class InvalidPasswordException extends ValidatorException{
     public InvalidPasswordException() {
             super(
