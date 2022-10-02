@@ -10,7 +10,6 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.time.Instant;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class Server {
@@ -148,7 +147,13 @@ public class Server {
                     connectedUsers.remove(connectedUser);
                     broadcastMessage(new Message(msg, "Server", false));
                     System.out.println(msg);
-
+                    connectedUsers.forEach(x -> {
+                        try {
+                            sendMessage(new Message(msg, "Server", false), x);
+                        } catch (IOException ex) {
+                            //pass
+                        }
+                    });
                 }
             } catch (Throwable e){
                 e.printStackTrace();

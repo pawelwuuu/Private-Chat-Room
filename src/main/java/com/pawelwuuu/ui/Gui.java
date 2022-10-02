@@ -150,6 +150,7 @@ public class Gui {
             this.messageBox = messageBox;
         }
 
+
         @Override
         protected String doInBackground() {
             while (true){

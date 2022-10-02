@@ -22,6 +22,7 @@ public class Client {
     private boolean isOn = true;
     private DataOutputStream output;
     private DataInputStream input;
+    //PORT OF APPLICATION
     private final int PORT = 43839;
 
     /**
