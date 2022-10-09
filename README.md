@@ -8,7 +8,7 @@ it's ip in the app setup. Number of computers that are able to chat in one chat 
 
 To open the Private Chatroom you need to double click on application jar or launch Gui class.
 
-## Instructuon
+## Instruction
 
 You can host the chat room or join one. If you want to host the chat room then you need to choose server radio button, then specify it's password and your nickname. User which have hosted the chat room is it's root.
 If you rather want to connect to already existing chat room you have to choose the client radio button and specify three things: your nickname, ip of host, password to
