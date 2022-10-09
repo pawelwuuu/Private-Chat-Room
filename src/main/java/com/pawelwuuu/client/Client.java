@@ -63,65 +63,6 @@ public class Client {
     }
 
     /**
-     *
-     */
-//    public void userInterface(){
-//        Thread receivingThread = new Thread(this::userReceivingMessageInterface);
-//        receivingThread.start();
-//
-//        userSendingMessageInterface();
-//    }
-
-//    private void userSendingMessageInterface(){
-//        Scanner scanner = new Scanner(System.in);
-//        System.out.println("Type exit to disconnect.");
-//
-//        while (isOn){
-//            String userInput = scanner.nextLine();
-//
-//            if (userInput.equals("exit")){
-//                isOn = false;
-//                return;
-//            }
-//
-//            try {
-//                Message message = createMessage(userInput);
-//                sendMessage(message);
-//            } catch (IOException e){
-//                System.out.println("Error, connection withe server may be failed.");
-//                System.out.println("Reason: " + e.getMessage());
-//                System.out.println("Client is turning off.");
-//                isOn = false;
-//            } catch (Throwable e){
-//                System.out.println("Error: " + e.getMessage());
-//                System.out.println("Client is turning off.");
-//                isOn = false;
-//            }
-//        }
-//    }
-
-//    private void userReceivingMessageInterface() {
-//        while (isOn){
-//            try{
-//                if (input.available() > 0){
-//                    Message message = receiveMessage();
-//
-//                    System.out.printf("%s: %s\n", message.getSender(), message.getContent());
-//                }
-//            } catch (IOException e){
-//                System.out.println("Connection with server failed.");
-//                System.out.println("Reason: " + e.getMessage());
-//                System.out.println("Client turning off.");
-//                isOn = false;
-//            } catch (Throwable e){
-//                System.out.println("Error: " + e.getMessage());
-//                System.out.println("Client turning off.");
-//                isOn = false;
-//            }
-//        }
-//    }
-
-    /**
      * Sends message object to connected server via socket.
      * @param message message object.
      * @throws IOException thrown if problem with socket or connection has occurred.
