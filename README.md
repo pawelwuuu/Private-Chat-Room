@@ -30,4 +30,4 @@ the chat room.
 /list - shows list of connected users.
 
 ## Download JAR
-To download the JAR file click [here](https://github.com/pawelwuuu/Private-Chat-Room/releases/download/App/Private-Chat.jar)
+To download the JAR file click [here](https://github.com/pawelwuuu/Private-Chat-Room/releases/download/App/Private-Chat.jar).
