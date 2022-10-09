@@ -28,3 +28,6 @@ the chat room.
 /disconnect - disconnects from the server. <br>
 /help    - shows help for the commands. <br>
 /list - shows list of connected users.
+
+## Download JAR
+To download the JAR file click [here](https://github.com/pawelwuuu/Private-Chat-Room/releases/download/App/Private-Chat.jar)
