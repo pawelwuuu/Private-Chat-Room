@@ -69,6 +69,9 @@ public class Gui {
         });
     }
 
+    /**
+     * Initiates both the server and client. Starts a programme.
+     */
     void initChat(){
         String password = passwordField.getText();
         if (password.isBlank()){
@@ -91,7 +94,7 @@ public class Gui {
                 server = new Server(ip, hashedPassword);
 
                 client = new Client(nick, password, ip.getHostAddress());
-                server.init(true);
+                server.init();
 
                 cardLayout.show(cardPanel, "client");       //setting the client chat card visible
 
@@ -121,6 +124,11 @@ public class Gui {
         frame.setVisible(true);
     }
 
+    /**
+     * Sends a message to the server using certain client.
+     * @param client Client object that will be used to send the message.
+     * @param messageInputField JTextComponent that contains the message to send.
+     */
     public void sendMessage(Client client, JTextComponent messageInputField){
         try{
             if ((messageInputField.getText().matches("/kick.+") || messageInputField.getText().matches("/ban.+"))

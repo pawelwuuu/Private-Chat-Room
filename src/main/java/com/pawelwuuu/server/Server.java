@@ -12,17 +12,26 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+
 public class Server {
     private ServerSocket server;
+    //APPLICATION PORT.
     private final int PORT = 43839;
     Thread connectionManager;
     Thread messageManager;
-    volatile boolean isOn;
+    volatile boolean isOn; //VOLATILE FIELD FOR SAFETY.
 
     private CopyOnWriteArrayList<ConnectedUser> connectedUsers = new CopyOnWriteArrayList<>();
     private CopyOnWriteArrayList<InetAddress> bannedUsers = new CopyOnWriteArrayList<>();
     private final String password;
 
+    /**
+     * Constructs the server object with passed server ip and password to the chat room. Changes isOn flag to true. If
+     * creation of server gone wrong, it is throwing out exception.
+     * @param serverIp InetAddress with server ip.
+     * @param password string password to the server.
+     * @throws IOException thrown when problem with socket or connection has occurred.
+     */
     public Server(InetAddress serverIp, String password) throws IOException {
         try {
             this.server = new ServerSocket(PORT, 100, serverIp);
@@ -35,6 +44,12 @@ public class Server {
         this.isOn = true;
     }
 
+    /**
+     *Blocks till new connection request appear. Creates new input and output for socket that want to connect. Checks
+     * whether ip of that socket is on banned list, nick of client is already in use or password is invalid,
+     * if so disconnects that socket. If socket is approved to connect, then it is used to creation of ConnectedUser
+     * object which is added to connectedUsers collection.
+     */
      void establishConnection(){
         try{
             Socket clientSocket = server.accept();
@@ -81,6 +96,16 @@ public class Server {
         }
     }
 
+    /**
+     * This method works until isOn flag is set to true. Checks if new messages is available, if so it is checking message
+     * for containing of server information that may be password to chat room or command to execute. If the incoming
+     * message contains command that is in correct form, it executes it, otherwise it sends message to the client with
+     * information about unknown command used by it. If received message does not contain server information then it
+     * broadcasts the message to other connected sockets. If there is a problem while sending a message to certain socket,
+     * it disconnects it. If excludeSendingSocket parameter is set to true, then method does not send message to the
+     * socket that is the author of it.
+     * @param excludeSendingSocket boolean that determines policy of sending messages to it's author socket.
+     */
      void manageIncomingMessages(boolean excludeSendingSocket){
         while (isOn){
             for (ConnectedUser connectedUser: connectedUsers) {
@@ -126,6 +151,12 @@ public class Server {
         }
     }
 
+    /**
+     * Sends message to all the connected clients. If excludeSendingSocket parameter is set to true,
+     * then method does not send message to the socket that is the author of it.
+     * @param excludedSocket boolean that determines policy of sending messages to it's author socket.
+     * @param parsedMessage string with serialized message object.
+     */
     public void broadcastMessage(String parsedMessage, Socket excludedSocket){
         for (ConnectedUser connectedUser: connectedUsers) {
             try {
@@ -146,14 +177,6 @@ public class Server {
                     String msg = connectedUser.getNick() + " has disconnected.";
                     connectedUsers.remove(connectedUser);
                     broadcastMessage(new Message(msg, "Server", false));
-                    System.out.println(msg);
-                    connectedUsers.forEach(x -> {
-                        try {
-                            sendMessage(new Message(msg, "Server", false), x);
-                        } catch (IOException ex) {
-                            //pass
-                        }
-                    });
                 }
             } catch (Throwable e){
                 e.printStackTrace();
@@ -170,6 +193,12 @@ public class Server {
         broadcastMessage(parsedMessage, null);
     }
 
+    /**
+     * Receives message from server side client socket input.
+     * @param socketInputStream DataInputStream object which is socket input stream.
+     * @return string with serialized received message.
+     * @throws IOException thrown when problem with socket or connection has occurred.
+     */
      public String receiveSocketMessage(DataInputStream socketInputStream) throws IOException{
         try{
             return socketInputStream.readUTF();
@@ -179,12 +208,21 @@ public class Server {
 
     }
 
+    /**
+     * This method launches establishConnection method in while loop until isOn flag is true.
+     */
     public void establishConnections(){
         while (isOn){
             establishConnection();
         }
     }
 
+    /**
+     * Serializes message object and sends it to certain server side client output stream.
+     * @param message message object.
+     * @param outputStream certain server side client output stream.
+     * @throws IOException thrown when problem with socket or connection has occurred.
+     */
     public void sendMessage(Message message, DataOutputStream outputStream) throws IOException {
         try {
             String parsedMessage = objectSerialization(message);
@@ -201,20 +239,28 @@ public class Server {
         }
     }
 
-    public void init(boolean isGui){
+    /**
+     * Initiates the server. Starts managing incoming connections and messages.
+     */
+    public void init(){
         System.out.println("Server Started!");
 
         connectionManager = new Thread(() -> establishConnections());
         connectionManager.start();
 
-        if (isGui){
+//        if (isGui){
             messageManager = new Thread(() -> manageIncomingMessages(false));
-        } else {
-            messageManager = new Thread(() -> manageIncomingMessages(true));
-        }
+//        } else {
+//            messageManager = new Thread(() -> manageIncomingMessages(true));
+//        }
         messageManager.start();
     }
 
+    /**
+     * Determines if the passed nick is already in use by other client.
+     * @param nick string with nick.
+     * @return true if nick is already in use, otherwise false.
+     */
     public boolean isNickUsed(String nick){
         for (ConnectedUser connectedUser: connectedUsers){
             if (connectedUser.getNick().equals(nick)){
@@ -225,6 +271,9 @@ public class Server {
         return false;
     }
 
+    /**
+     * Shuts down the server.
+     */
     public void shutdown() {
         try {
             server.close();

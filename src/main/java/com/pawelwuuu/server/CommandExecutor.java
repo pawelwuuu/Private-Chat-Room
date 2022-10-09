@@ -4,8 +4,17 @@ import com.pawelwuuu.Exceptions.UnknownCommandException;
 import com.pawelwuuu.Message;
 import com.pawelwuuu.server.commands.*;
 
+/**
+ * This class is responsible for executing and recognizing client-server commands.
+ */
 public class CommandExecutor {
-
+    /**
+     * At first this method is trying to recognize the command that is contained in Message object, if the command is
+     * recognized successful, then it is executed on the server.
+     * @param message
+     * @param server
+     * @throws UnknownCommandException
+     */
     protected static void executeCommand(Message message, Server server) throws UnknownCommandException {
         Command concreteCommand;
 
@@ -33,7 +42,7 @@ public class CommandExecutor {
         }
 
         if (concreteCommand != null){
-            concreteCommand.execute();
+            concreteCommand.execute();  //CONCRETE COMMAND EXECUTION
         }
     }
 }

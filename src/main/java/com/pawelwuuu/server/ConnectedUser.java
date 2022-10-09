@@ -16,6 +16,12 @@ public class ConnectedUser {
     private DataOutputStream userOutput;
     private DataInputStream userInput;
 
+    /**
+     * Constructs the new ConnectedUser object. Creates new input and output for user socket.
+     * @param nick string with user nick.
+     * @param userSocket socket with connected client socket.
+     * @throws IOException thrown when problem with socket or connection has occurred.
+     */
     public ConnectedUser(String nick, Socket userSocket) throws IOException {
         this.nick = nick;
         this.userSocket = userSocket;
@@ -28,6 +34,14 @@ public class ConnectedUser {
         }
     }
 
+    /**
+     * Constructs the new ConnectedUser object.
+     * @param nick string with user nick.
+     * @param userSocket socket with connected client socket.
+     * @param userInput client socket input.
+     * @param userOutput client socket output.
+     * @throws IOException thrown when problem with socket or connection has occurred.
+     */
     public ConnectedUser(String nick, Socket userSocket, DataOutputStream userOutput, DataInputStream userInput) {
         this.nick = nick;
         this.userSocket = userSocket;
@@ -35,6 +49,9 @@ public class ConnectedUser {
         this.userInput = userInput;
     }
 
+    /**
+     * Closes the user socket.
+     */
     public void closeConnection() {
         try {
             userSocket.close();

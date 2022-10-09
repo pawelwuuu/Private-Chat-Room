@@ -9,7 +9,6 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
-import java.util.Scanner;
 import static com.pawelwuuu.utils.JsonManager.*;
 
 /**
@@ -26,7 +25,9 @@ public class Client {
     private final int PORT = 43839;
 
     /**
-     * Constructs a client object with specified nick, password to chat room and ip to connect to.
+     * Constructs a client object with specified nick, password to chat room and ip to connect to. Password is being hashed
+     * during construction. Also it connects to the server.
+     * server.
      * @param nick string containing nickname.
      * @param password string containing password to the server chat room.
      * @param serverIp string representation of ip. For instance 100.200.100.50.
@@ -46,7 +47,7 @@ public class Client {
             if (serverIp != null && ! Validator.IsIpCorrect(serverIp)){
                 throw new InvalidIpException();
             }
-            //UNIQUE port of app
+            //CONNECTION TO THE SERVER
             this.socket = new Socket(serverIp, PORT);
 
             this.output = new DataOutputStream(socket.getOutputStream());
@@ -64,62 +65,68 @@ public class Client {
     /**
      *
      */
-    public void userInterface(){
-        Thread receivingThread = new Thread(this::userReceivingMessageInterface);
-        receivingThread.start();
+//    public void userInterface(){
+//        Thread receivingThread = new Thread(this::userReceivingMessageInterface);
+//        receivingThread.start();
+//
+//        userSendingMessageInterface();
+//    }
 
-        userSendingMessageInterface();
-    }
+//    private void userSendingMessageInterface(){
+//        Scanner scanner = new Scanner(System.in);
+//        System.out.println("Type exit to disconnect.");
+//
+//        while (isOn){
+//            String userInput = scanner.nextLine();
+//
+//            if (userInput.equals("exit")){
+//                isOn = false;
+//                return;
+//            }
+//
+//            try {
+//                Message message = createMessage(userInput);
+//                sendMessage(message);
+//            } catch (IOException e){
+//                System.out.println("Error, connection withe server may be failed.");
+//                System.out.println("Reason: " + e.getMessage());
+//                System.out.println("Client is turning off.");
+//                isOn = false;
+//            } catch (Throwable e){
+//                System.out.println("Error: " + e.getMessage());
+//                System.out.println("Client is turning off.");
+//                isOn = false;
+//            }
+//        }
+//    }
 
-    private void userSendingMessageInterface(){
-        Scanner scanner = new Scanner(System.in);
-        System.out.println("Type exit to disconnect.");
+//    private void userReceivingMessageInterface() {
+//        while (isOn){
+//            try{
+//                if (input.available() > 0){
+//                    Message message = receiveMessage();
+//
+//                    System.out.printf("%s: %s\n", message.getSender(), message.getContent());
+//                }
+//            } catch (IOException e){
+//                System.out.println("Connection with server failed.");
+//                System.out.println("Reason: " + e.getMessage());
+//                System.out.println("Client turning off.");
+//                isOn = false;
+//            } catch (Throwable e){
+//                System.out.println("Error: " + e.getMessage());
+//                System.out.println("Client turning off.");
+//                isOn = false;
+//            }
+//        }
+//    }
 
-        while (isOn){
-            String userInput = scanner.nextLine();
-
-            if (userInput.equals("exit")){
-                isOn = false;
-                return;
-            }
-
-            try {
-                Message message = createMessage(userInput);
-                sendMessage(message);
-            } catch (IOException e){
-                System.out.println("Error, connection withe server may be failed.");
-                System.out.println("Reason: " + e.getMessage());
-                System.out.println("Client is turning off.");
-                isOn = false;
-            } catch (Throwable e){
-                System.out.println("Error: " + e.getMessage());
-                System.out.println("Client is turning off.");
-                isOn = false;
-            }
-        }
-    }
-
-    private void userReceivingMessageInterface() {
-        while (isOn){
-            try{
-                if (input.available() > 0){
-                    Message message = receiveMessage();
-
-                    System.out.printf("%s: %s\n", message.getSender(), message.getContent());
-                }
-            } catch (IOException e){
-                System.out.println("Connection with server failed.");
-                System.out.println("Reason: " + e.getMessage());
-                System.out.println("Client turning off.");
-                isOn = false;
-            } catch (Throwable e){
-                System.out.println("Error: " + e.getMessage());
-                System.out.println("Client turning off.");
-                isOn = false;
-            }
-        }
-    }
-
+    /**
+     * Sends message object to connected server via socket.
+     * @param message message object.
+     * @throws IOException thrown if problem with socket or connection has occurred.
+     * @throws MessageFormatException thrown if message object contains message in invalid format.
+     */
     public void sendMessage(Message message) throws IOException, MessageFormatException {
         if (message.getContent().isBlank()) {
             throw new MessageFormatException("Message cannot be blank or empty.");
@@ -129,6 +136,11 @@ public class Client {
         output.writeUTF(serializedMessage);
     }
 
+    /**
+     *Assumes that the incoming message is present, receives message from server socket.
+     * @return Message object received from the server.
+     * @throws IOException thrown if problem with socket or connection has occurred.
+     */
     Message receiveMessage() throws IOException {
         try {
             String serializedMessage = input.readUTF();
@@ -140,6 +152,12 @@ public class Client {
         }
     }
 
+    /**
+     * Assumes that the incoming message is present, receives message that is formatted. The format is present:
+     * "Time | nick: message".
+     * @return string with formatted message.
+     * @throws IOException thrown if problem with socket or connection has occurred.
+     */
     public String receiveFormattedMessage() throws IOException{
         try {
             Message receivedMessage = receiveMessage();
@@ -153,6 +171,11 @@ public class Client {
         }
     }
 
+    /**
+     * Determines if the incoming data from server is available.
+     * @return true if incoming to socket input is available or false if it is not.
+     * @throws IOException thrown if problem with socket or connection has occurred.
+     */
     public boolean isInputAvailable() throws IOException {
         try{
             return input.available() > 0;
@@ -161,6 +184,12 @@ public class Client {
         }
     }
 
+    /**
+     * Creates message object with specified content. Message object will consist of client nickname, and message content.
+     * If message content starts with '/' character, then containingServerInformation flag will be set to true.
+     * @param content string with message content.
+     * @return message object.
+     */
     public Message createMessage(String content){
         if (content.startsWith("/")){
             return new Message(content, nick, true);

@@ -6,7 +6,6 @@ import com.pawelwuuu.server.Server;
 
 import java.net.InetAddress;
 import java.util.Collection;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 public class BanCommand extends ConcreteCommand{
     String nick;
