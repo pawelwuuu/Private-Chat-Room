@@ -1,8 +1,10 @@
-# Private-Chat-Room
+# Private Peer to Peer chat room
 
 Private chat room is an application that provides tools to create a Peer To Peer connection with another computers. You can connect to certain computer just by typing
 it's ip in the app setup. Number of computers that are able to chat in one chat room is unlimited.
 
+## How does the programme works
+At first user have to specify initial setup for chat room. There are two options: client and server. When client option is choosen then client obejct is created, meanwhile construction of client object typed password is hashed and connection request with hashed password is sent to specified ip via socket. If server option has been choosen then server and client objects are created, server is created on local machine so other computers are connecting with it creating peer to peer connection.  Client imiedietly connects with server, server hashes specified password as well. Peer to peer connection that is created in this app is unique because of that computers connected to server do not have the same permissions, only server is the root.
 
 ## How to run
 
